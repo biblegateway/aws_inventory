@@ -17,7 +17,6 @@ setup(
   license='License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
   platforms='any',
   install_requires=['boto3'],
-  scripts=['scripts/inv.py'],
   classifiers=[
     'Development Status :: 4 - Beta',
     'Operating System :: OS Independent',
