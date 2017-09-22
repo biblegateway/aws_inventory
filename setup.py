@@ -1,5 +1,6 @@
 import os
-from distutils.core import setup
+#from distutils.core import setup
+from setuptools import setup
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
@@ -23,6 +24,6 @@ setup(
     'Programming Language :: Python',
     'Programming Language :: Python :: 2',
     'Topic :: System :: Systems Administration'
-    ]
+  ]
 )
 
