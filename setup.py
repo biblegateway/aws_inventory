@@ -17,7 +17,7 @@ setup(
   download_url='https://pypi.python.org/pypi/aws_inventory',
   license='License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
   platforms='any',
-  install_requires=['boto3'],
+  install_requires=['boto3', 'pyyaml'],
   classifiers=[
     'Development Status :: 4 - Beta',
     'Operating System :: OS Independent',
