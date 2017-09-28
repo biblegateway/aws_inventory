@@ -5,8 +5,10 @@ boto3:
   aws_access_key_id: ''
   aws_secret_access_key: ''
 hostnames:
-  source: tag
-  tag: Name
+#  source: ec2_metadata
+#  var: PublicDnsName
+  source: ec2_tag
+  var: Name
 groups:
   - {name: test, hostvar: 'ec2_tag_Name', match: '^hostname[0-9]\.domain\.com$'}
 
