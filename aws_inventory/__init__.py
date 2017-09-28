@@ -24,8 +24,7 @@ class aws_inventory(object):
     self.config = yaml.load(open(config, 'r'))
     # Set some config defaults, if not present
     if not 'hostnames' in self.config: self.config['hostnames'] = {}
-    if not 'source' in self.config['config'] or :
-      self.config['hostnames'] = 'tag'
+    if not 'source' in self.config['hostnames']: self.config['hostnames']['source'] = 'tag'
     if self.config['hostnames']['source'] = 'tag' and not 'tag' in self.config['hostnames']:
       self.config['hostnames']['tag'] = 'Name'
     if self.config['hostnames']['source'] = 'meta' and not 'meta' in self.config['hostnames']:
