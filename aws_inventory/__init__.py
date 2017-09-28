@@ -23,7 +23,13 @@ class aws_inventory(object):
     # Read in the config to construct and build host groups
     self.config = yaml.load(open(config, 'r'))
     # Set some config defaults, if not present
-    if not 'hostname_tag' in self.config['config']: self.config['config']['hostname_tag'] = 'Name'
+    if not 'hostnames' in self.config: self.config['hostnames'] = {}
+    if not 'source' in self.config['config'] or :
+      self.config['hostnames'] = 'tag'
+    if self.config['hostnames']['source'] = 'tag' and not 'tag' in self.config['hostnames']:
+      self.config['hostnames']['tag'] = 'Name'
+    if self.config['hostnames']['source'] = 'meta' and not 'meta' in self.config['hostnames']:
+      self.config['hostnames']['meta'] = 'ec2_public_dns_name'
 
     # Create empty host groups from the config
     for g in self.config['groups']:
@@ -56,11 +62,14 @@ class aws_inventory(object):
             hostname = ''
             hostvars = []
             tags = {}
+            # If the meta var matches what we use to assign hostnames with, use the value as the hostname
+            if self.config['hostnames']['source'] = 'meta' and self.config['hostnames']['meta'] in m:
+              hostname = m[self.config['hostnames']['meta']]
             # Go through ec2 tags
             for t in m['Tags']:
               tags['ec2_tag_%s' % t['Key'].replace(':', '_')] = t['Value']
-              # Assign hostname based on the specified ec2 tag
-              if (t['Key'] == self.config['config']['hostname_tag']):
+              # If the tag matches what we use to assign hostnames with, use the value as the hostname
+              if self.config['hostnames']['source'] = 'tag' and t['Key'] == self.config['hostnames']['tag']:
                 hostname = t['Value']
             # Add to 'all'
             self.inventory['all']['hosts'].append(hostname)

@@ -4,8 +4,9 @@ boto3:
   region_name: 'us-east-1'
   aws_access_key_id: ''
   aws_secret_access_key: ''
-config:
-  hostname_tag: Name
+hostnames:
+  source: tag
+  tag: Name
 groups:
   - {name: test, hostvar: 'ec2_tag_Name', match: '^hostname[0-9]\.domain\.com$'}
 
