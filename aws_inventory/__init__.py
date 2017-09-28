@@ -62,13 +62,13 @@ class aws_inventory(object):
             hostvars = []
             tags = {}
             # If the meta var matches what we use to assign hostnames with, use the value as the hostname
-            if self.config['hostnames']['source'] = 'meta' and self.config['hostnames']['meta'] in m:
+            if self.config['hostnames']['source'] == 'meta' and self.config['hostnames']['meta'] in m:
               hostname = m[self.config['hostnames']['meta']]
             # Go through ec2 tags
             for t in m['Tags']:
               tags['ec2_tag_%s' % t['Key'].replace(':', '_')] = t['Value']
               # If the tag matches what we use to assign hostnames with, use the value as the hostname
-              if self.config['hostnames']['source'] = 'tag' and t['Key'] == self.config['hostnames']['tag']:
+              if self.config['hostnames']['source'] == 'tag' and t['Key'] == self.config['hostnames']['tag']:
                 hostname = t['Value']
             # Add to 'all'
             self.inventory['all']['hosts'].append(hostname)
