@@ -22,6 +22,8 @@ class aws_inventory(object):
 
     # Read in the config to construct and build host groups
     self.config = yaml.load(open(config, 'r'))
+    # Set some config defaults, if not present
+    if not 'hostname_tag' in self.config['config']: self.config['config']['hostname_tag'] = 'Name'
 
     # Create empty host groups from the config
     for g in self.config['groups']:
@@ -57,11 +59,11 @@ class aws_inventory(object):
             # Go through ec2 tags
             for t in m['Tags']:
               tags['ec2_tag_%s' % t['Key'].replace(':', '_')] = t['Value']
-              if (t['Key'] == 'Name'):
+              # Assign hostname based on the specified ec2 tag
+              if (t['Key'] == self.config['config']['hostname_tag']):
                 hostname = t['Value']
             # Add to 'all'
-            if 'gcii.net' in hostname:
-              self.inventory['all']['hosts'].append(hostname)
+            self.inventory['all']['hosts'].append(hostname)
             # Add hostvars for the host to the inventory
             self.inventory['_meta']['hostvars'][hostname] = {}
             self.inventory['_meta']['hostvars'][hostname].update(tags)
@@ -88,7 +90,7 @@ class aws_inventory(object):
     # TODO: Get relevant ElastiCache instance data and add it to the inventory
 
 
-    # Assign hosts to groups
+    # Iterate through "all", and add hosts to groups
     for h in self.inventory['all']['hosts']:
     #  if ' ' in h: continue
       for g in self.config['groups']:
