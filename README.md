@@ -9,11 +9,11 @@ pip install git+https://github.com/zahna/aws_inventory.git#egg=master
 pip install -e git+https://github.com/zahna/aws_inventory.git#egg=master  
 
 Hostnames in the config file can use tags or metadata.  
-Examples of useful metadata vars:
-  InstanceId  
-  PublicDnsName  
-  PublicIpAddress  
-  PrivateIpAddress  
-  PrivateDnsName  
+Examples of useful metadata vars:  
+InstanceId  
+PublicDnsName  
+PublicIpAddress  
+PrivateIpAddress  
+PrivateDnsName  
 
 
