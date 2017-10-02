@@ -106,9 +106,13 @@ class aws_inventory(object):
     #      inventory[g['name']].append(inventory['_meta']['hostvars'][h]['ec2_public_ip_address'])
           self.inventory[g['name']].append(h)
 
-    # Shuffle host order in groups; it requires us to be more robust
+    # Per group, shuffle host order if specified
     for group in self.config['groups']:
-      random.shuffle(self.inventory[group['name']])
+      if 'order' in group:
+        if group['order'].lower() == 'shuffle':
+          random.shuffle(self.inventory[group['name']])
+        elif group['order'].lower() == 'sorted':
+          self.inventory[group['name']].sort()
 
   def output(self, format='json'):
     if format == 'json':

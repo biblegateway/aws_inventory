@@ -16,4 +16,4 @@ PublicIpAddress
 PrivateIpAddress  
 PrivateDnsName  
 
-
+config file
