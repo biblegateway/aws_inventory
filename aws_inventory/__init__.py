@@ -43,7 +43,7 @@ class aws_inventory(object):
                           aws_access_key_id = self.config['boto3']['aws_access_key_id'],
                           aws_secret_access_key = self.config['boto3']['aws_secret_access_key'])
 
-  def alphanum_key(s):
+  def alphanum_key(self, s):
     '''http://nedbatchelder.com/blog/200712/human_sorting.html'''
     tryint = lambda s: int(s) if s.isdigit() else s
     return [ tryint(c) for c in re.split('(\d+)', s) ]
