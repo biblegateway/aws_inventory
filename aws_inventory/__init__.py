@@ -43,6 +43,11 @@ class aws_inventory(object):
                           aws_access_key_id = self.config['boto3']['aws_access_key_id'],
                           aws_secret_access_key = self.config['boto3']['aws_secret_access_key'])
 
+  def alphanum_key(s):
+    '''http://nedbatchelder.com/blog/200712/human_sorting.html'''
+    tryint = lambda s: int(s) if s.isdigit() else s
+    return [ tryint(c) for c in re.split('(\d+)', s) ]
+
   def run(self):
     # Get relevant EC2 instance data and add it to the inventory
     for item in self.ec2.describe_instances().items():
@@ -112,7 +117,7 @@ class aws_inventory(object):
         if group['order'].lower() == 'shuffle':
           random.shuffle(self.inventory[group['name']])
         elif group['order'].lower() == 'sorted':
-          self.inventory[group['name']].sort()
+          self.inventory[group['name']].sort(key=self.alphanum_key)
 
   def output(self, format='json'):
     if format == 'json':
