@@ -1,6 +1,7 @@
 from __future__ import print_function
 import yaml
 import json
+from botocore.client import Config
 import boto3
 import re
 import random
@@ -30,18 +31,28 @@ class aws_inventory(object):
     if self.config['hostnames']['source'] == 'ec2_metadata' and not 'ec2_metadata' in self.config['hostnames']:
       self.config['hostnames']['var'] = 'PublicDnsName'
 
+    if not 'region_name' in self.config['boto3']: self.config['boto3']['region_name'] = 'us-east-1'
+    if not 'connect_timeout' in self.config['boto3']: self.config['boto3']['connect_timeout'] = 3
+    if not 'read_timeout' in self.config['boto3']: self.config['boto3']['read_timeout'] = 10
+    if not 'max_attempts' in self.config['boto3']: self.config['boto3']['max_attempts'] = 10
+
     # Create empty host groups from the config
     for g in self.config['groups']:
       self.inventory[g['name']] = []
 
+    config = Config(region_name = self.config['boto3']['region_name'],
+                    connect_timeout = self.config['boto3']['connect_timeout'],
+                    read_timeout = self.config['boto3']['read_timeout'],
+                    retries = {'max_attempts': self.config['boto3']['max_attempts']})
+
     # These creds are for our IAM user "ansible_deploy"
-    self.ec2 = boto3.client('ec2', region_name = self.config['boto3']['region_name'],
-                          aws_access_key_id = self.config['boto3']['aws_access_key_id'],
-                          aws_secret_access_key = self.config['boto3']['aws_secret_access_key'])
+    self.ec2 = boto3.client('ec2', config=config,
+                            aws_access_key_id = self.config['boto3']['aws_access_key_id'],
+                            aws_secret_access_key = self.config['boto3']['aws_secret_access_key'])
     #print(dir(ec2))
-    self.rds = boto3.client('rds', region_name = self.config['boto3']['region_name'],
-                          aws_access_key_id = self.config['boto3']['aws_access_key_id'],
-                          aws_secret_access_key = self.config['boto3']['aws_secret_access_key'])
+    self.rds = boto3.client('rds', config=config,
+                            aws_access_key_id = self.config['boto3']['aws_access_key_id'],
+                            aws_secret_access_key = self.config['boto3']['aws_secret_access_key'])
 
   def alphanum_key(self, s):
     '''http://nedbatchelder.com/blog/200712/human_sorting.html'''
@@ -103,21 +114,22 @@ class aws_inventory(object):
     # TODO: Get relevant ElastiCache instance data and add it to the inventory
 
 
-    # Iterate through "all", and add hosts to groups
-    for h in self.inventory['all']['hosts']:
-    #  if ' ' in h: continue
-      for g in self.config['groups']:
+    # Iterate through each host group, adding hosts from "all" that match
+    for g in self.config['groups']:
+      self.inventory[g['name']] = {'hosts': [], 'vars': {}}
+      if 'vars' in g: self.inventory[g['name']]['vars'].update(g['vars'])
+      for h in self.inventory['all']['hosts']:
+        # Test whether the metadata hostvar we group by is in the host's metadata and that its value matches
         if g['hostvar'] in self.inventory['_meta']['hostvars'][h] and re.search(g['match'], self.inventory['_meta']['hostvars'][h][g['hostvar']]):
-    #      inventory[g['name']].append(inventory['_meta']['hostvars'][h]['ec2_public_ip_address'])
-          self.inventory[g['name']].append(h)
+          self.inventory[g['name']]['hosts'].append(h)
 
     # Per group, shuffle host order if specified
     for group in self.config['groups']:
       if 'order' in group:
         if group['order'].lower() == 'shuffle':
-          random.shuffle(self.inventory[group['name']])
+          random.shuffle(self.inventory[group['name']]['hosts'])
         elif group['order'].lower() == 'sorted':
-          self.inventory[group['name']].sort(key=self.alphanum_key)
+          self.inventory[group['name']]['hosts'].sort(key=self.alphanum_key)
 
   def output(self, format='json'):
     if format == 'json':
