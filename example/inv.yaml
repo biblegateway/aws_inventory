@@ -14,6 +14,7 @@ hostnames:
   var: Name
 groups:
 # order options: shuffle, sorted, none
+  - {name: local, hostvar: 'ansible_host', match: 'localhost', vars: {ansible_connection: local}}
   - {name: test1, hostvar: 'ec2_tag_Name', match: '^hostname[0-9]\.domain\.com$'}
   - {name: test2, hostvar: 'ec2_tag_Name', match: '^hostname[0-9]\.domain\.com$', order: none}
   - {name: test3, hostvar: 'ec2_tag_Name', match: '^hostname[0-9]\.domain\.com$', order: sorted}
