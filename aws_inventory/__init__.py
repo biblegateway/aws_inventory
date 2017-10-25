@@ -10,8 +10,9 @@ class aws_inventory(object):
   def __init__(self, config):
     # Initialize the inventory
     self.inventory = {}
-    self.inventory['all'] = {'hosts': [], 'vars': {}}
     self.inventory['_meta'] = {'hostvars': {}}
+    self.inventory['all'] = {'hosts': [], 'vars': {}}
+
     # Add localhost to inventory
     self.inventory['all']['hosts'].append('localhost')
     self.inventory['_meta']['hostvars']['localhost'] = {}
