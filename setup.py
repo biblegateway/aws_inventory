@@ -11,7 +11,7 @@ setup(
   author='Scott Zahn',
   author_email='scott@zahna.com',
   packages=['aws_inventory'],
-  description='A simple dynamic AWS inventory which groups nodes using regular expressions',
+  description='A dynamic AWS inventory for Ansible which groups nodes using regular expressions.',
   long_description=read('README.md'),
   url='https://github.com/zahna/aws_inventory',
   download_url='https://pypi.python.org/pypi/aws_inventory',
