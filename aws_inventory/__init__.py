@@ -60,7 +60,7 @@ class aws_inventory(object):
     tryint = lambda s: int(s) if s.isdigit() else s
     return [ tryint(c) for c in re.split('(\d+)', s) ]
 
-  def run(self):
+  def run(self, format='json'):
     # Get relevant EC2 instance data and add it to the inventory
     for item in self.ec2.describe_instances().items():
       #print("%s\n\n" % dir(item))
@@ -132,9 +132,8 @@ class aws_inventory(object):
         elif group['order'].lower() == 'sorted':
           self.inventory[group['name']]['hosts'].sort(key=self.alphanum_key)
 
-  def output(self, format='json'):
+    # Return the inventory for outputting
     if format == 'json':
-      # Output the inventory
-      print(json.dumps(self.inventory, sort_keys=True, indent=2, separators=(',', ': ')))
+      return json.dumps(self.inventory, sort_keys=True, indent=2, separators=(',', ': '))
 
 

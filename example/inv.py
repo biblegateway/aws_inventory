@@ -7,6 +7,5 @@ from aws_inventory import *
 
 if __name__ == "__main__":
   inv = aws_inventory("./inv.yaml")
-  inv.run()
-  inv.output()
+  print(inv.run())
 
