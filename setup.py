@@ -7,11 +7,11 @@ def read(fname):
 
 setup(
   name='aws_inventory',
-  version='0.2.3',
+  version='0.2.4',
   author='Scott Zahn',
   author_email='scott@zahna.com',
   packages=['aws_inventory'],
-  description='A simple dynamic AWS inventory for Ansible',
+  description='A simple dynamic AWS inventory which groups nodes using regular expressions',
   long_description=read('README.md'),
   url='https://github.com/zahna/aws_inventory',
   download_url='https://pypi.python.org/pypi/aws_inventory',

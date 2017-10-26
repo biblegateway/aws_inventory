@@ -71,7 +71,7 @@ class aws_inventory(object):
             # If it's not running, skip it
             if m['State']['Name'] != 'running': continue
             # If instance has no ec2 tags, skip it.
-            if 'Tags' not in m:
+            if self.config['hostnames']['source'] == 'ec2_tag' and 'Tags' not in m:
               print("WARNING: Instance %s has no tags -- %s" % (m['InstanceId'], m), file=sys.stderr)
               continue
             #print("%s" % m)
