@@ -1,6 +1,5 @@
 # aws_inventory
-A dynamic AWS inventory for Ansible  
-(https://pypi.org/project/aws_inventory/)
+A dynamic AWS inventory for Ansible - https://pypi.org/project/aws_inventory/
 
 Install examples:  
 pip install aws_inventory  
