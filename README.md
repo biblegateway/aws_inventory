@@ -6,6 +6,9 @@ pip install aws_inventory
 pip install git+https://github.com/zahna/aws_inventory.git#egg=master  
 pip install -e git+https://github.com/zahna/aws_inventory.git#egg=master  
 
+git clone https://github.com/zahna/aws_inventory.git#egg=master
+pip install -e /path/to/aws_inventory
+
 ## config file options
 
 First, see the examples/ directory for example files that use aws_inventory.

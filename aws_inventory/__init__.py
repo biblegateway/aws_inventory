@@ -1,4 +1,5 @@
 from __future__ import print_function
+import os
 import sys
 import yaml
 import json
@@ -23,8 +24,14 @@ class aws_inventory(object):
     self.inventory['_meta']['hostvars']['localhost']['ec2_private_ip_address'] = '127.0.0.1'
     self.inventory['_meta']['hostvars']['localhost']['ansible_connection'] = 'local'
 
-    # Read in the config to construct and build host groups
-    self.config = yaml.load(open(config, 'r'))
+    # Read in the config to construct and build host groups. Autodetect if it's a file or string.
+    if os.path.isfile(config):
+      self.config = yaml.load(open(config, 'r'))
+    elif type(config) == str:
+      self.config = yaml.load(config)
+    else:
+      raise TypeError
+
     # Set some config defaults, if not present
     if not 'hostnames' in self.config: self.config['hostnames'] = {}
     if not 'source' in self.config['hostnames']: self.config['hostnames']['source'] = 'ec2_tag'
@@ -61,6 +68,7 @@ class aws_inventory(object):
     tryint = lambda s: int(s) if s.isdigit() else s
     return [ tryint(c) for c in re.split('(\d+)', s) ]
 
+  # Formats: json, raw
   def run(self, format='json'):
     # Get relevant EC2 instance data and add it to the inventory
     for item in self.ec2.describe_instances().items():
@@ -97,6 +105,7 @@ class aws_inventory(object):
               self.inventory['_meta']['hostvars'][hostname]['ansible_host'] = m['PublicDnsName']
               self.inventory['_meta']['hostvars'][hostname]['ec2_public_dns_name'] = m['PublicDnsName']
             else:
+              #raise KeyError
               print("ERROR: no PublicDnsName for host -- %s" % m, file=sys.stderr)
               print("Aborting.", file=sys.stderr)
               exit(1)
@@ -136,5 +145,7 @@ class aws_inventory(object):
     # Return the inventory for outputting
     if format == 'json':
       return json.dumps(self.inventory, sort_keys=True, indent=2, separators=(',', ': '))
+    elif format == 'raw':
+      return self.inventory
 
 
