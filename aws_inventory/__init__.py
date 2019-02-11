@@ -10,7 +10,7 @@ import random
 
 class aws_inventory(object):
   def __init__(self, config):
-    # Initialize the inventory
+    # Initialize an empty inventory
     self.inventory = {}
     self.inventory['_meta'] = {'hostvars': {}}
     self.inventory['all'] = {'hosts': [], 'vars': {}}
@@ -41,8 +41,8 @@ class aws_inventory(object):
       self.config['hostnames']['var'] = 'PublicDnsName'
 
     if not 'region_name' in self.config['boto3']: self.config['boto3']['region_name'] = 'us-east-1'
-    if not 'connect_timeout' in self.config['boto3']: self.config['boto3']['connect_timeout'] = 3
-    if not 'read_timeout' in self.config['boto3']: self.config['boto3']['read_timeout'] = 10
+    if not 'connect_timeout' in self.config['boto3']: self.config['boto3']['connect_timeout'] = 5
+    if not 'read_timeout' in self.config['boto3']: self.config['boto3']['read_timeout'] = 20
     if not 'max_attempts' in self.config['boto3']: self.config['boto3']['max_attempts'] = 10
 
     # Create empty host groups from the config
@@ -71,8 +71,12 @@ class aws_inventory(object):
   # Formats: json, raw
   def run(self, format='json'):
     # Get relevant EC2 instance data and add it to the inventory
-    for item in self.ec2.describe_instances().items():
-      #print("%s\n\n" % dir(item))
+    aws_resp = self.ec2.describe_instances()
+    if aws_resp['ResponseMetadata']['HTTPStatusCode'] != 200:
+      print("ERROR: Received HTTP status code {} from AWS. Exiting.".format(aws_resp['ResponseMetadata']['HTTPStatusCode']), file=sys.stderr)
+      exit(1)
+    for item in aws_resp.items():
+      #print("{}\n\n".format(dir(item)))
       for i in item[1]:
         # For some reason every ec2 instance is listed inside a dict, under the key "Instances"
         if type(i) == dict:
@@ -81,9 +85,9 @@ class aws_inventory(object):
             if m['State']['Name'] != 'running': continue
             # If instance has no ec2 tags, skip it.
             if self.config['hostnames']['source'] == 'ec2_tag' and 'Tags' not in m:
-              print("WARNING: Instance %s has no tags -- %s" % (m['InstanceId'], m), file=sys.stderr)
+              print("WARNING: Instance {} has no tags -- {}".format(m['InstanceId'], m), file=sys.stderr)
               continue
-            #print("%s" % m)
+            #print("{}".format(m))
             hostname = ''
             hostvars = []
             tags = {}
@@ -106,18 +110,17 @@ class aws_inventory(object):
               self.inventory['_meta']['hostvars'][hostname]['ec2_public_dns_name'] = m['PublicDnsName']
             else:
               #raise KeyError
-              print("ERROR: no PublicDnsName for host -- %s" % m, file=sys.stderr)
-              print("Aborting.", file=sys.stderr)
+              print("ERROR: no PublicDnsName for host -- {}. Aborting.".format(m), file=sys.stderr)
               exit(1)
             if 'PublicIpAddress' in m.keys():
               self.inventory['_meta']['hostvars'][hostname]['ec2_public_ip_address'] = m['PublicIpAddress']
             else:
-              print("WARNING: no PublicIpAddress for host -- %s" % m, file=sys.stderr)
+              print("WARNING: no PublicIpAddress for host -- {}".format(m), file=sys.stderr)
             self.inventory['_meta']['hostvars'][hostname]['ec2_private_ip_address'] = m['PrivateIpAddress']
 
     # TODO: Get relevant RDS instance data and add it to the inventory
     #for item in self.rds.describe_db_instances().items():
-    #  #print("%s\n\n" % dir(item))
+    #  #print("{}\n\n".format(dir(item)))
     #  for i in item[1]:
     #    print(item)
 
