@@ -26,9 +26,9 @@ class aws_inventory(object):
 
     # Read in the config to construct and build host groups. Autodetect if it's a file or string.
     if os.path.isfile(config):
-      self.config = yaml.load(open(config, 'r'))
+      self.config = yaml.load(open(config, 'r'), Loader=yaml.FullLoader)
     elif type(config) == str:
-      self.config = yaml.load(config)
+      self.config = yaml.load(config, Loader=yaml.FullLoader)
     else:
       raise TypeError
 
