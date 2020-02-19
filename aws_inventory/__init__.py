@@ -81,38 +81,51 @@ class aws_inventory(object):
         # For some reason every ec2 instance is listed inside a dict, under the key "Instances"
         if type(i) == dict:
           for m in i['Instances']:
-            # If it's not running, skip it
-            if m['State']['Name'] != 'running': continue
-            # If instance has no ec2 tags, skip it.
-            if self.config['hostnames']['source'] == 'ec2_tag' and 'Tags' not in m:
-              print("WARNING: Instance {} has no tags -- {}".format(m['InstanceId'], m), file=sys.stderr)
-              continue
-            #print("{}".format(m))
             hostname = ''
             hostvars = []
             tags = {}
-            # If the meta var matches what we use to assign hostnames with, use the value as the hostname
+            #print("{}".format(m))
+            # If it is not running, skip it
+            if m['State']['Name'] != 'running': continue
+            if self.config['hostnames']['source'] == 'ec2_tag':
+              # If the ec2 tag matches what we use to assign inventory hostnames, use the value as the hostname
+              if 'Tags' in m:
+                found = False
+                for t in m['Tags']:
+                  if t['Key'] == self.config['hostnames']['var']:
+                    hostname = t['Value']
+                    found = True
+                    break
+                if not found:
+                  print("WARNING: Instance {} has no tag \"{}\". Skipping.".format(m['InstanceId'], self.config['hostnames']['var']), file=sys.stderr)
+                  continue
+              # If instance has no ec2 tags, skip it.
+              else:
+                print("WARNING: Instance {} has no tags. Skipping.".format(m['InstanceId']), file=sys.stderr)
+                continue
+            # If the ec2 metadata variable matches what we use to assign inventory hostnames, use the value as the hostname
             if self.config['hostnames']['source'] == 'ec2_metadata' and self.config['hostnames']['var'] in m:
               hostname = m[self.config['hostnames']['var']]
-            # Go through ec2 tags
+            # Prep host's ec2 tags for inclusion in inventory
             for t in m['Tags']:
               tags['ec2_tag_%s' % t['Key'].replace(':', '_')] = t['Value']
-              # If the tag matches what we use to assign hostnames with, use the value as the hostname
-              if self.config['hostnames']['source'] == 'ec2_tag' and t['Key'] == self.config['hostnames']['var']:
-                hostname = t['Value']
-            # Add to 'all'
+            # Add host to group 'all'
             self.inventory['all']['hosts'].append(hostname)
             # Add hostvars for the host to the inventory
             self.inventory['_meta']['hostvars'][hostname] = {}
             self.inventory['_meta']['hostvars'][hostname].update(tags)
+            if 'hostvars' in self.config and hostname in self.config['hostvars']:
+              self.inventory['_meta']['hostvars'][hostname].update(self.config['hostvars'][hostname])
             if 'PublicDnsName' in m.keys():
+              # "ansible_host" is what ansible uses to communicate with the host
               self.inventory['_meta']['hostvars'][hostname]['ansible_host'] = m['PublicDnsName']
               self.inventory['_meta']['hostvars'][hostname]['ec2_public_dns_name'] = m['PublicDnsName']
             else:
-              #raise KeyError
               print("ERROR: no PublicDnsName for host -- {}. Aborting.".format(m), file=sys.stderr)
               exit(1)
             if 'PublicIpAddress' in m.keys():
+              # "ansible_host" is what ansible uses to communicate with the host
+              #self.inventory['_meta']['hostvars'][hostname]['ansible_host'] = m['PublicIpAddress']
               self.inventory['_meta']['hostvars'][hostname]['ec2_public_ip_address'] = m['PublicIpAddress']
             else:
               print("WARNING: no PublicIpAddress for host -- {}".format(m), file=sys.stderr)

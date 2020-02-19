@@ -19,4 +19,7 @@ groups:
   - {name: test2, hostvar: 'ec2_tag_Name', match: '^hostname[0-9]\.domain\.com$', order: none}
   - {name: test3, hostvar: 'ec2_tag_Name', match: '^hostname[0-9]\.domain\.com$', order: sorted}
   - {name: test4, hostvar: 'ec2_tag_Name', match: '^hostname[0-9]\.domain\.com$', order: shuffle}
+hostvars:
+  example_hostname:
+    variable_name: "variable_value"
 

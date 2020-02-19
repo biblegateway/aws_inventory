@@ -1,13 +1,15 @@
+#!/usr/bin/env python
+
 import os
 #from distutils.core import setup
 from setuptools import setup
 
 def read(fname):
-    return open(os.path.join(os.path.dirname(__file__), fname)).read()
+  return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(
   name='aws_inventory',
-  version='0.4.1',
+  version='0.5.3',
   author='Scott Zahn',
   author_email='scott@zahna.com',
   packages=['aws_inventory'],
