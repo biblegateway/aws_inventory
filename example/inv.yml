@@ -22,4 +22,7 @@ groups:
 hostvars:
   example_hostname:
     variable_name: "variable_value"
+  ^regex\.*:
+    variable_name: "variable_value"
+    ansible_python_interpreter: "/usr/bin/env python"
 

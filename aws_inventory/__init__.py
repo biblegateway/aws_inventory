@@ -39,7 +39,7 @@ class aws_inventory(object):
       self.config['hostnames']['var'] = 'Name'
     if self.config['hostnames']['source'] == 'ec2_metadata' and not 'ec2_metadata' in self.config['hostnames']:
       self.config['hostnames']['var'] = 'PublicDnsName'
-
+    # Set some boto3 config defaults
     if not 'region_name' in self.config['boto3']: self.config['boto3']['region_name'] = 'us-east-1'
     if not 'connect_timeout' in self.config['boto3']: self.config['boto3']['connect_timeout'] = 5
     if not 'read_timeout' in self.config['boto3']: self.config['boto3']['read_timeout'] = 20
@@ -54,27 +54,27 @@ class aws_inventory(object):
                     read_timeout = self.config['boto3']['read_timeout'],
                     retries = {'max_attempts': self.config['boto3']['max_attempts']})
 
-    # These creds are for our IAM user "ansible_deploy"
     self.ec2 = boto3.client('ec2', config=config,
                             aws_access_key_id = self.config['boto3']['aws_access_key_id'],
                             aws_secret_access_key = self.config['boto3']['aws_secret_access_key'])
-    #print(dir(ec2))
     self.rds = boto3.client('rds', config=config,
                             aws_access_key_id = self.config['boto3']['aws_access_key_id'],
                             aws_secret_access_key = self.config['boto3']['aws_secret_access_key'])
 
+  # For sorting
   def alphanum_key(self, s):
     '''http://nedbatchelder.com/blog/200712/human_sorting.html'''
     tryint = lambda s: int(s) if s.isdigit() else s
     return [ tryint(c) for c in re.split('(\d+)', s) ]
 
-  # Formats: json, raw
+  # Formats: json, raw (a raw Python dict)
   def run(self, format='json'):
-    # Get relevant EC2 instance data and add it to the inventory
+    # Get EC2 instance data
     aws_resp = self.ec2.describe_instances()
     if aws_resp['ResponseMetadata']['HTTPStatusCode'] != 200:
       print("ERROR: Received HTTP status code {} from AWS. Exiting.".format(aws_resp['ResponseMetadata']['HTTPStatusCode']), file=sys.stderr)
       exit(1)
+    # Loop through the AWS response and add the relevant instance info to the inventory
     for item in aws_resp.items():
       #print("{}\n\n".format(dir(item)))
       for i in item[1]:
@@ -111,20 +111,22 @@ class aws_inventory(object):
               tags['ec2_tag_%s' % t['Key'].replace(':', '_')] = t['Value']
             # Add host to group 'all'
             self.inventory['all']['hosts'].append(hostname)
-            # Add hostvars for the host to the inventory
+            # Add any hostvars for the host to the inventory
             self.inventory['_meta']['hostvars'][hostname] = {}
             self.inventory['_meta']['hostvars'][hostname].update(tags)
-            if 'hostvars' in self.config and hostname in self.config['hostvars']:
-              self.inventory['_meta']['hostvars'][hostname].update(self.config['hostvars'][hostname])
+            if 'hostvars' in self.config and self.config['hostvars'] != None:
+              for h in self.config['hostvars']:
+                if re.search(h, hostname):
+                  self.inventory['_meta']['hostvars'][hostname].update(self.config['hostvars'][h])
             if 'PublicDnsName' in m.keys():
-              # "ansible_host" is what ansible uses to communicate with the host
+              # The hostvar "ansible_host" is what ansible uses when connecting to the host
               self.inventory['_meta']['hostvars'][hostname]['ansible_host'] = m['PublicDnsName']
               self.inventory['_meta']['hostvars'][hostname]['ec2_public_dns_name'] = m['PublicDnsName']
             else:
               print("ERROR: no PublicDnsName for host -- {}. Aborting.".format(m), file=sys.stderr)
               exit(1)
             if 'PublicIpAddress' in m.keys():
-              # "ansible_host" is what ansible uses to communicate with the host
+              # The hostvar "ansible_host" is what ansible uses when connecting to the host
               #self.inventory['_meta']['hostvars'][hostname]['ansible_host'] = m['PublicIpAddress']
               self.inventory['_meta']['hostvars'][hostname]['ec2_public_ip_address'] = m['PublicIpAddress']
             else:
