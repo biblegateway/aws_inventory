@@ -114,7 +114,7 @@ class aws_inventory(object):
             # Add any hostvars for the host to the inventory
             self.inventory['_meta']['hostvars'][hostname] = {}
             self.inventory['_meta']['hostvars'][hostname].update(tags)
-            if 'hostvars' in self.config and self.config['hostvars'] != None:
+            if 'hostvars' in self.config and type(self.config['hostvars']) == dict:
               for h in self.config['hostvars']:
                 if re.search(h, hostname):
                   self.inventory['_meta']['hostvars'][hostname].update(self.config['hostvars'][h])
