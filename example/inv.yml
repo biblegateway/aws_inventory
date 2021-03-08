@@ -20,9 +20,17 @@ groups:
   - {name: test3, hostvar: 'ec2_tag_Name', match: '^hostname[0-9]\.domain\.com$', order: sorted}
   - {name: test4, hostvar: 'ec2_tag_Name', match: '^hostname[0-9]\.domain\.com$', order: shuffle}
 hostvars:
-  example_hostname:
+  # substr "contains" match
+  ansiblehost:
     variable_name: "variable_value"
-  ^regex\.*:
+  # exact string match
+  =ansiblehost:
     variable_name: "variable_value"
+  # regex match
+  ~^regex\.*:
+    variable_name: "variable_value"
+  # example for localhost
+  =localhost:
+    ansible_connection: local
     ansible_python_interpreter: "/usr/bin/env python"
 

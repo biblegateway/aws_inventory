@@ -10,20 +10,6 @@ import random
 
 class aws_inventory(object):
   def __init__(self, config):
-    # Initialize an empty inventory
-    self.inventory = {}
-    self.inventory['_meta'] = {'hostvars': {}}
-    self.inventory['all'] = {'hosts': [], 'vars': {}}
-
-    # Add localhost to inventory
-    self.inventory['all']['hosts'].append('localhost')
-    self.inventory['_meta']['hostvars']['localhost'] = {}
-    self.inventory['_meta']['hostvars']['localhost']['ansible_host'] = 'localhost'
-    self.inventory['_meta']['hostvars']['localhost']['ec2_public_dns_name'] = 'localhost'
-    self.inventory['_meta']['hostvars']['localhost']['ec2_public_ip_address'] = '127.0.0.1'
-    self.inventory['_meta']['hostvars']['localhost']['ec2_private_ip_address'] = '127.0.0.1'
-    self.inventory['_meta']['hostvars']['localhost']['ansible_connection'] = 'local'
-
     # Read in the config to construct and build host groups. Autodetect if it's a file or string.
     if os.path.isfile(config):
       self.config = yaml.load(open(config, 'r'), Loader=yaml.FullLoader)
@@ -45,21 +31,52 @@ class aws_inventory(object):
     if not 'read_timeout' in self.config['boto3']: self.config['boto3']['read_timeout'] = 20
     if not 'max_attempts' in self.config['boto3']: self.config['boto3']['max_attempts'] = 10
 
+    # Initialize the inventory
+    self.inventory = {}
+    self.inventory['_meta'] = {'hostvars': {}}
+    self.inventory['all'] = {'hosts': [], 'vars': {}}
+
+    # Add localhost to inventory
+    self.inventory['all']['hosts'].append('localhost')
+    self.inventory['_meta']['hostvars']['localhost'] = {}
+    self.inventory['_meta']['hostvars']['localhost']['ansible_host'] = 'localhost'
+    self.inventory['_meta']['hostvars']['localhost']['ec2_public_dns_name'] = 'localhost'
+    self.inventory['_meta']['hostvars']['localhost']['ec2_public_ip_address'] = '127.0.0.1'
+    self.inventory['_meta']['hostvars']['localhost']['ec2_private_ip_address'] = '127.0.0.1'
+    # Add any hostvars for localhost to the inventory
+    self.inventory['_meta']['hostvars']['localhost'].update(self._get_hostvars('localhost'))
+
     # Create empty host groups from the config
     for g in self.config['groups']:
       self.inventory[g['name']] = []
 
-    config = Config(region_name = self.config['boto3']['region_name'],
+    aws_config = Config(region_name = self.config['boto3']['region_name'],
                     connect_timeout = self.config['boto3']['connect_timeout'],
                     read_timeout = self.config['boto3']['read_timeout'],
                     retries = {'max_attempts': self.config['boto3']['max_attempts']})
 
-    self.ec2 = boto3.client('ec2', config=config,
+    self.ec2 = boto3.client('ec2', config=aws_config,
                             aws_access_key_id = self.config['boto3']['aws_access_key_id'],
                             aws_secret_access_key = self.config['boto3']['aws_secret_access_key'])
-    self.rds = boto3.client('rds', config=config,
+    self.rds = boto3.client('rds', config=aws_config,
                             aws_access_key_id = self.config['boto3']['aws_access_key_id'],
                             aws_secret_access_key = self.config['boto3']['aws_secret_access_key'])
+
+  # Return a dict of hostvars applicable to the host
+  def _get_hostvars(self, host):
+    hostvars = {}
+    if 'hostvars' in self.config and type(self.config['hostvars']) == dict:
+      for h in self.config['hostvars']:
+        if h[0] == "~":
+          if re.search(h[1:], host):
+            hostvars.update(self.config['hostvars'][h])
+        elif h[0] == "=":
+          if h[1:] == host:
+            hostvars.update(self.config['hostvars'][h])
+        else:
+          if h in host:
+            hostvars.update(self.config['hostvars'][h])
+    return hostvars
 
   # For sorting
   def alphanum_key(self, s):
@@ -114,10 +131,7 @@ class aws_inventory(object):
             # Add any hostvars for the host to the inventory
             self.inventory['_meta']['hostvars'][hostname] = {}
             self.inventory['_meta']['hostvars'][hostname].update(tags)
-            if 'hostvars' in self.config and type(self.config['hostvars']) == dict:
-              for h in self.config['hostvars']:
-                if re.search(h, hostname):
-                  self.inventory['_meta']['hostvars'][hostname].update(self.config['hostvars'][h])
+            self.inventory['_meta']['hostvars'][hostname].update(self._get_hostvars(hostname))
             if 'PublicDnsName' in m.keys():
               # The hostvar "ansible_host" is what ansible uses when connecting to the host
               self.inventory['_meta']['hostvars'][hostname]['ansible_host'] = m['PublicDnsName']
