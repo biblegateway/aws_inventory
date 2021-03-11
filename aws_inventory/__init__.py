@@ -157,7 +157,19 @@ class aws_inventory(object):
     # TODO: Get relevant ElastiCache instance data and add it to the inventory
 
 
-    # Iterate through each host group, adding hosts from "all" that match
+    # Lastly with hosts, add local nodename to inventory, if not already present
+    local_nodename = os.uname()[1]
+    if local_nodename not in self.inventory['all']['hosts']:
+      self.inventory['all']['hosts'].append(local_nodename)
+      self.inventory['_meta']['hostvars'][local_nodename] = {}
+      self.inventory['_meta']['hostvars'][local_nodename]['ansible_host'] = local_nodename
+      self.inventory['_meta']['hostvars'][local_nodename]['ec2_public_dns_name'] = local_nodename
+      self.inventory['_meta']['hostvars'][local_nodename]['ec2_public_ip_address'] = '127.0.0.1'
+      self.inventory['_meta']['hostvars'][local_nodename]['ec2_private_ip_address'] = '127.0.0.1'
+      # Add any hostvars for localhost to the inventory
+      self.inventory['_meta']['hostvars'][local_nodename].update(self._get_hostvars(local_nodename))
+
+    # Iterate through each host group, adding hosts from group "all" that match
     for g in self.config['groups']:
       self.inventory[g['name']] = {'hosts': [], 'vars': {}}
       if 'vars' in g: self.inventory[g['name']]['vars'].update(g['vars'])
