@@ -102,10 +102,10 @@ class aws_inventory(object):
             hostvars = []
             tags = {}
             #print("{}".format(m))
-            # If it is not running, skip it
+            # If an instance is not running, skip it
             if m['State']['Name'] != 'running': continue
+            # If we use an ec2 tag to assign the inventory hostname, find it and use it
             if self.config['hostnames']['source'] == 'ec2_tag':
-              # If the ec2 tag matches what we use to assign inventory hostnames, use the value as the hostname
               if 'Tags' in m:
                 found = False
                 for t in m['Tags']:
@@ -120,9 +120,13 @@ class aws_inventory(object):
               else:
                 print("WARNING: Instance {} has no tags. Skipping.".format(m['InstanceId']), file=sys.stderr)
                 continue
-            # If the ec2 metadata variable matches what we use to assign inventory hostnames, use the value as the hostname
-            if self.config['hostnames']['source'] == 'ec2_metadata' and self.config['hostnames']['var'] in m:
-              hostname = m[self.config['hostnames']['var']]
+            # If we use an ec2 metadata variable to assign the inventory hostname, find it and use it
+            if self.config['hostnames']['source'] == 'ec2_metadata':
+              if self.config['hostnames']['var'] in m:
+                hostname = m[self.config['hostnames']['var']]
+              else:
+                print("WARNING: Instance {} has no metadata variable \"{}\". Skipping.".format(m['InstanceId'], self.config['hostnames']['var']), file=sys.stderr)
+                continue
             # Prep host's ec2 tags for inclusion in inventory
             for t in m['Tags']:
               tags['ec2_tag_%s' % t['Key'].replace(':', '_')] = t['Value']
