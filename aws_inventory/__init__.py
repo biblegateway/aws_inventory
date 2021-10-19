@@ -15,6 +15,8 @@ class aws_inventory(object):
       self.config = yaml.load(open(config, 'r'), Loader=yaml.FullLoader)
     elif type(config) == str:
       self.config = yaml.load(config, Loader=yaml.FullLoader)
+      if type(self.config) != dict:
+        raise TypeError(f"Inventory config was not able to be parsed properly. Provided inventory config: \"{config}\"")
     else:
       raise TypeError
 
@@ -25,6 +27,8 @@ class aws_inventory(object):
       self.config['hostnames']['var'] = 'Name'
     if self.config['hostnames']['source'] == 'ec2_metadata' and not 'ec2_metadata' in self.config['hostnames']:
       self.config['hostnames']['var'] = 'PublicDnsName'
+    if not 'ansible_host_var' in self.config: self.config['ansible_host_var'] = 'PublicIpAddress'
+
     # Set some boto3 config defaults
     if not 'region_name' in self.config['boto3']: self.config['boto3']['region_name'] = 'us-east-1'
     if not 'connect_timeout' in self.config['boto3']: self.config['boto3']['connect_timeout'] = 5
@@ -136,20 +140,25 @@ class aws_inventory(object):
             self.inventory['_meta']['hostvars'][hostname] = {}
             self.inventory['_meta']['hostvars'][hostname].update(tags)
             self.inventory['_meta']['hostvars'][hostname].update(self._get_hostvars(hostname))
+
+            # The hostvar "ansible_host" is what ansible uses when ssh'ing to the host.
+            if self.config['ansible_host_var'] in m.keys():
+              self.inventory['_meta']['hostvars'][hostname]['ansible_host'] = m[self.config['ansible_host_var']]
+            else:
+              print("ERROR: can not set hostvar \"ansible_host\" on \"{}\". ec2 metadata \"{}\" missing. Exiting.".format(hostname, self.config['ansible_host_var']), file=sys.stderr)
+              exit(1)
+
+            self.inventory['_meta']['hostvars'][hostname]['ec2_private_ip_address'] = m['PrivateIpAddress']
             if 'PublicDnsName' in m.keys():
-              # The hostvar "ansible_host" is what ansible uses when connecting to the host
-              self.inventory['_meta']['hostvars'][hostname]['ansible_host'] = m['PublicDnsName']
               self.inventory['_meta']['hostvars'][hostname]['ec2_public_dns_name'] = m['PublicDnsName']
             else:
-              print("ERROR: no PublicDnsName for host -- {}. Aborting.".format(m), file=sys.stderr)
-              exit(1)
+              print("WARNING: no PublicDnsName for host -- {}.".format(m), file=sys.stderr)
             if 'PublicIpAddress' in m.keys():
-              # The hostvar "ansible_host" is what ansible uses when connecting to the host
-              #self.inventory['_meta']['hostvars'][hostname]['ansible_host'] = m['PublicIpAddress']
               self.inventory['_meta']['hostvars'][hostname]['ec2_public_ip_address'] = m['PublicIpAddress']
             else:
               print("WARNING: no PublicIpAddress for host -- {}".format(m), file=sys.stderr)
-            self.inventory['_meta']['hostvars'][hostname]['ec2_private_ip_address'] = m['PrivateIpAddress']
+
+
 
     # TODO: Get relevant RDS instance data and add it to the inventory
     #for item in self.rds.describe_db_instances().items():
