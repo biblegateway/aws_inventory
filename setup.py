@@ -9,7 +9,7 @@ def read(fname):
 
 setup(
   name='aws_inventory',
-  version='0.5.7',
+  version='0.5.8',
   author='Scott Zahn',
   author_email='scott@zahna.com',
   packages=['aws_inventory'],

@@ -35,6 +35,22 @@ class aws_inventory(object):
     if not 'read_timeout' in self.config['boto3']: self.config['boto3']['read_timeout'] = 20
     if not 'max_attempts' in self.config['boto3']: self.config['boto3']['max_attempts'] = 10
 
+    # Initialize the needed AWS clients
+    aws_config = Config(region_name = self.config['boto3']['region_name'],
+                        connect_timeout = self.config['boto3']['connect_timeout'],
+                        read_timeout = self.config['boto3']['read_timeout'],
+                        retries = {'max_attempts': self.config['boto3']['max_attempts']})
+    if 'AWS_PROFILE' in os.environ:
+      self.ec2 = boto3.client('ec2', config=aws_config)
+      self.rds = boto3.client('rds', config=aws_config)
+    elif 'aws_access_key_id' in self.config['boto3'] and 'aws_secret_access_key' in self.config['boto3']:
+      self.ec2 = boto3.client('ec2', config=aws_config,
+                              aws_access_key_id = self.config['boto3']['aws_access_key_id'],
+                              aws_secret_access_key = self.config['boto3']['aws_secret_access_key'])
+      self.rds = boto3.client('rds', config=aws_config,
+                              aws_access_key_id = self.config['boto3']['aws_access_key_id'],
+                              aws_secret_access_key = self.config['boto3']['aws_secret_access_key'])
+
     # Initialize the inventory
     self.inventory = {}
     self.inventory['_meta'] = {'hostvars': {}}
@@ -53,18 +69,6 @@ class aws_inventory(object):
     # Create empty host groups from the config
     for g in self.config['groups']:
       self.inventory[g['name']] = []
-
-    aws_config = Config(region_name = self.config['boto3']['region_name'],
-                    connect_timeout = self.config['boto3']['connect_timeout'],
-                    read_timeout = self.config['boto3']['read_timeout'],
-                    retries = {'max_attempts': self.config['boto3']['max_attempts']})
-
-    self.ec2 = boto3.client('ec2', config=aws_config,
-                            aws_access_key_id = self.config['boto3']['aws_access_key_id'],
-                            aws_secret_access_key = self.config['boto3']['aws_secret_access_key'])
-    self.rds = boto3.client('rds', config=aws_config,
-                            aws_access_key_id = self.config['boto3']['aws_access_key_id'],
-                            aws_secret_access_key = self.config['boto3']['aws_secret_access_key'])
 
   # Return a dict of hostvars applicable to the host
   def _get_hostvars(self, host):

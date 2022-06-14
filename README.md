@@ -24,3 +24,8 @@ Metadata examples:
   * PrivateIpAddress  
   * PrivateDnsName  
 
+## Using an AWS profile credentials
+
+aws_inventory can use an AWS profile's credentials. If the environment variable AWS_PROFILE is set, aws_inventory will use it.
+
+

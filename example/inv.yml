@@ -12,6 +12,7 @@ hostnames:
 #  var: PublicDnsName
   source: ec2_tag
   var: Name
+ansible_host_var: PublicDnsName
 groups:
 # order options: shuffle, sorted, none
   - {name: local, hostvar: 'ansible_host', match: 'localhost', vars: {ansible_connection: local}}
